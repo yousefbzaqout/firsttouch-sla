@@ -20,6 +20,8 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/logs/*
+!/storage/logs/.gitignore
 /vendor
 _ide_helper.php
 Homestead.json
@@ -28,4 +30,11 @@ Thumbs.db
 # Windows zone identifiers
 *:Zone.Identifier
 
+# Local tooling / binaries (never commit)
+composer.phar
+.docker/
 
+**/caddy
+frankenphp
+frankenphp-worker.php
+.env.testing

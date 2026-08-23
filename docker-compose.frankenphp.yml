@@ -1,0 +1,86 @@
+services:
+    app:
+        image: dunglas/frankenphp:php8.5
+        ports:
+            - '${APP_PORT:-8000}:8000'
+            - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'
+        environment:
+            SERVER_NAME: ':8000'
+            FRANKENPHP_CONFIG: 'worker ./public/index.php'
+            APP_ENV: '${APP_ENV:-local}'
+            APP_DEBUG: '${APP_DEBUG:-true}'
+        volumes:
+            - '.:/app'
+        working_dir: /app
+        depends_on:
+            pgsql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+
+    pgsql:
+        image: pgvector/pgvector:pg18
+        ports:
+            - '${FORWARD_DB_PORT:-5432}:5432'
+        environment:
+            POSTGRES_DB: '${DB_DATABASE:-firsttouch_sla}'
+            POSTGRES_USER: '${DB_USERNAME:-sail}'
+            POSTGRES_PASSWORD: '${DB_PASSWORD:-password}'
+        volumes:
+            - ./.docker/pgsql:/var/lib/postgresql/data
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME:-sail} -d ${DB_DATABASE:-firsttouch_sla}']
+            interval: 10s
+            retries: 5
+            timeout: 5s
+
+    redis:
+        image: redis:8-alpine
+        ports:
+            - '${FORWARD_REDIS_PORT:-6379}:6379'
+        volumes:
+            - redis-data:/data
+        healthcheck:
+            test: ['CMD', 'redis-cli', 'ping']
+            interval: 10s
+            retries: 3
+            timeout: 5s
+
+    mailpit:
+        image: axllent/mailpit:latest
+        ports:
+            - '${FORWARD_MAILPIT_PORT:-8025}:8025'
+            - '${FORWARD_MAILPIT_SMTP_PORT:-1025}:1025'
+
+    horizon:
+        image: dunglas/frankenphp:php8.5
+        command: php artisan horizon
+        environment:
+            APP_ENV: '${APP_ENV:-local}'
+            APP_DEBUG: '${APP_DEBUG:-true}'
+        volumes:
+            - '.:/app'
+        working_dir: /app
+        depends_on:
+            pgsql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+
+    scheduler:
+        image: dunglas/frankenphp:php8.5
+        command: php artisan schedule:work
+        environment:
+            APP_ENV: '${APP_ENV:-local}'
+            APP_DEBUG: '${APP_DEBUG:-true}'
+        volumes:
+            - '.:/app'
+        working_dir: /app
+        depends_on:
+            pgsql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+
+volumes:
+    redis-data:

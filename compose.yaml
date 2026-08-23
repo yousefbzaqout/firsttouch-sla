@@ -4,7 +4,7 @@ services:
             context: ./vendor/laravel/sail/runtimes/8.5
             dockerfile: Dockerfile
             args:
-                WWWGROUP: '${WWWGROUP}'
+                WWWGROUP: '${WWWGROUP:-1000}'
         image: sail-8.5/app
         extra_hosts:
             - 'host.docker.internal:host-gateway'
@@ -12,11 +12,52 @@ services:
             - '${APP_PORT:-80}:80'
             - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'
         environment:
-            WWWUSER: '${WWWUSER}'
+            WWWUSER: '${WWWUSER:-1000}'
             LARAVEL_SAIL: 1
             XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
             XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
             IGNITION_LOCAL_SITES_PATH: '${PWD}'
+            SUPERVISOR_PHP_USER: sail
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            - pgsql
+            - redis
+    horizon:
+        build:
+            context: ./vendor/laravel/sail/runtimes/8.5
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP:-1000}'
+        image: sail-8.5/app
+        command: php artisan horizon
+        restart: unless-stopped
+        environment:
+            WWWUSER: '${WWWUSER:-1000}'
+            LARAVEL_SAIL: 1
+            SUPERVISOR_PHP_USER: sail
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            - pgsql
+            - redis
+    scheduler:
+        build:
+            context: ./vendor/laravel/sail/runtimes/8.5
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP:-1000}'
+        image: sail-8.5/app
+        command: php artisan schedule:work
+        restart: unless-stopped
+        environment:
+            WWWUSER: '${WWWUSER:-1000}'
+            LARAVEL_SAIL: 1
+            SUPERVISOR_PHP_USER: sail
         volumes:
             - '.:/var/www/html'
         networks:
@@ -25,7 +66,7 @@ services:
             - pgsql
             - redis
     pgsql:
-        image: 'postgres:18-alpine'
+        image: 'pgvector/pgvector:pg18'
         ports:
             - '${FORWARD_DB_PORT:-5432}:5432'
         environment:
@@ -50,7 +91,7 @@ services:
             retries: 3
             timeout: 5s
     redis:
-        image: 'redis:alpine'
+        image: 'redis:8-alpine'
         ports:
             - '${FORWARD_REDIS_PORT:-6379}:6379'
         volumes:
@@ -64,6 +105,35 @@ services:
                 - ping
             retries: 3
             timeout: 5s
+    mailpit:
+        image: 'axllent/mailpit:latest'
+        ports:
+            - '${FORWARD_MAILPIT_PORT:-8025}:8025'
+            - '${FORWARD_MAILPIT_SMTP_PORT:-1025}:1025'
+        networks:
+            - sail
+    n8n:
+        image: 'docker.n8n.io/n8nio/n8n:2.35.5'
+        ports:
+            - '${FORWARD_N8N_PORT:-5678}:5678'
+        environment:
+            N8N_HOST: '${N8N_HOST:-localhost}'
+            N8N_PORT: 5678
+            N8N_PROTOCOL: http
+            N8N_WEBHOOK_URL: '${N8N_PUBLIC_URL:-http://localhost:5678}/'
+            WEBHOOK_URL: '${N8N_PUBLIC_URL:-http://localhost:5678}/'
+            GENERIC_TIMEZONE: '${APP_TIMEZONE:-UTC}'
+            N8N_SECURE_COOKIE: 'false'
+            N8N_RUNNERS_ENABLED: 'true'
+            # Allow workflow expressions like $env.TELEGRAM_CHAT_ID (blocked by default in n8n 2.x)
+            N8N_BLOCK_ENV_ACCESS_IN_NODE: 'false'
+            TELEGRAM_CHAT_ID: '${TELEGRAM_CHAT_ID:-}'
+            WHATSAPP_GATEWAY_URL: '${WHATSAPP_GATEWAY_URL:-}'
+        volumes:
+            - 'sail-n8n:/home/node/.n8n'
+        networks:
+            - sail
+        restart: unless-stopped
 networks:
     sail:
         driver: bridge
@@ -71,4 +141,6 @@ volumes:
     sail-pgsql:
         driver: local
     sail-redis:
+        driver: local
+    sail-n8n:
         driver: local

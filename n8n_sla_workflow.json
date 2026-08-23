@@ -1,0 +1,236 @@
+{
+  "id": "ft-sla-alerts-dispatcher",
+  "name": "FirstTouch SLA Alerts Dispatcher",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "firsttouch-sla-alerts",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "firsttouch-sla-alerts"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.event_type ?? $json.event_type ?? ($json.body.type === 'escalation' ? 'sla_breach' : ($json.body.type === 'sla_alert' ? 'sla_warning' : '')) }}",
+                    "rightValue": "sla_warning",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "sla_warning"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.event_type ?? $json.event_type ?? ($json.body.type === 'escalation' ? 'sla_breach' : '') }}",
+                    "rightValue": "sla_breach",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "sla_breach"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.event_type ?? $json.event_type ?? '' }}",
+                    "rightValue": "credit_exhausted",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "credit_exhausted"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "name": "Route by Event Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "=🔔 SLA Warning\n\nTenant: {{ $json.body.tenant_name ?? 'N/A' }}\nLead: {{ $json.body.lead_name }}\nPhone: {{ $json.body.lead_phone ?? $json.body.phone }}\nTime Remaining: {{ $json.body.time_remaining ?? 'N/A' }}\nMessage: {{ $json.body.message }}\n\n{{ $json.body.timestamp ?? $now.toISO() }}",
+        "additionalFields": {}
+      },
+      "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+      "name": "Telegram SLA Warning",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [760, 140],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "telegramApi": {
+          "id": "8P3aqEZ4GY4fxZMU",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "=🚨 SLA BREACH\n\nTenant: {{ $json.body.tenant_name ?? 'N/A' }}\nLead: {{ $json.body.lead_name }}\nPhone: {{ $json.body.lead_phone ?? $json.body.phone }}\nMessage: {{ $json.body.message }}\n\n⚠️ Escalation triggered — WhatsApp alert sent.\n\n{{ $json.body.timestamp ?? $now.toISO() }}",
+        "additionalFields": {}
+      },
+      "id": "d4e5f6a7-b8c9-0123-def0-234567890123",
+      "name": "Telegram SLA Breach",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [760, 300],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "telegramApi": {
+          "id": "8P3aqEZ4GY4fxZMU",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WHATSAPP_GATEWAY_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phone\": \"{{ $json.body.lead_phone ?? $json.body.phone }}\",\n  \"tenant_id\": \"{{ $json.body.tenant_id }}\",\n  \"lead_id\": \"{{ $json.body.lead_id }}\",\n  \"lead_name\": \"{{ $json.body.lead_name }}\",\n  \"event_type\": \"sla_breach\",\n  \"priority\": \"urgent\",\n  \"message\": \"URGENT SLA BREACH: {{ $json.body.lead_name }} ({{ $json.body.lead_phone ?? $json.body.phone }}) — {{ $json.body.message }}\"\n}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "e5f6a7b8-c9d0-1234-ef01-345678901234",
+      "name": "WhatsApp Gateway",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1040, 300],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "=💳 AI Credits Exhausted\n\nTenant: {{ $json.body.tenant_name ?? 'N/A' }}\nMessage: {{ $json.body.message }}\n\nRouting switched to human_only.\n\n{{ $json.body.timestamp ?? $now.toISO() }}",
+        "additionalFields": {}
+      },
+      "id": "f6a7b8c9-d0e1-2345-f012-456789012345",
+      "name": "Telegram Credit Exhausted",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [760, 460],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "telegramApi": {
+          "id": "8P3aqEZ4GY4fxZMU",
+          "name": "Telegram Bot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Route by Event Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Event Type": {
+      "main": [
+        [
+          {
+            "node": "Telegram SLA Warning",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram SLA Breach",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram Credit Exhausted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram SLA Breach": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp Gateway",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": [
+    {
+      "name": "firsttouch-sla"
+    }
+  ]
+}
