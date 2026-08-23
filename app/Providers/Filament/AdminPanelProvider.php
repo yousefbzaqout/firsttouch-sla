@@ -42,7 +42,6 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->brandName('FirstTouch SLA')
-            ->darkMode(false)
             ->login()
             ->registration(Register::class)
             ->passwordReset()
