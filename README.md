@@ -218,16 +218,6 @@ CI runs the same gates on every push/PR to `main`.
 
 ---
 
-## GitHub launch checklist (for maintainers)
-
-1. Confirm `.env` / keys / `composer.phar` are **not** in git
-2. Push `main` with green CI
-3. Set GitHub **About**: short description + topics (`laravel`, `multi-tenant`, `sla`, `filament`, `pgvector`, `telegram`, `n8n`)
-4. Keep MIT `LICENSE` + `SECURITY.md` at repo root
-5. Prefer one semantic release tag when you cut a public version (`v1.0.0`)
-
----
-
 ## Author
 
 **Yousef Bzaqout** — portfolio system focused on tenancy, SLA reliability, and integration security.
