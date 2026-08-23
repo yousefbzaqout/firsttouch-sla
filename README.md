@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Security](https://img.shields.io/badge/Security-Passed-1B7F4E)](SECURITY.md)
 
-[Features](#feature-gallery) · [Architecture](#architecture) · [Quick start](#quick-start) · [API](#api--webhooks) · [Docs](docs/ARCHITECTURE.md)
+[Changelog](CHANGELOG.md) · [Features](#feature-gallery) · [Architecture](#architecture) · [Quick start](#quick-start) · [API](#api--webhooks) · [Docs](docs/ARCHITECTURE.md)
 
 <p align="center">
   <img src="docs/marketing/firsttouch-sla-hero-legion.jpg" alt="FirstTouch SLA on a Lenovo Legion display — Leads inbox with SLA badges" width="900" />
