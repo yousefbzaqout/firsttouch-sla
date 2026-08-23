@@ -20,13 +20,14 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg18
         env:
-          POSTGRES_DB: firsttouch_sla
+          # Must match phpunit.xml DB_DATABASE=testing (Pest parallel clones testing_test_N).
+          POSTGRES_DB: testing
           POSTGRES_USER: sail
           POSTGRES_PASSWORD: password
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U sail -d firsttouch_sla"
+          --health-cmd "pg_isready -U sail -d testing"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -77,7 +78,7 @@ jobs:
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
-          DB_DATABASE: firsttouch_sla
+          DB_DATABASE: testing
           DB_USERNAME: sail
           DB_PASSWORD: password
           CACHE_STORE: redis
@@ -97,7 +98,7 @@ jobs:
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
-          DB_DATABASE: firsttouch_sla
+          DB_DATABASE: testing
           DB_USERNAME: sail
           DB_PASSWORD: password
           CACHE_STORE: redis
@@ -114,7 +115,7 @@ jobs:
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
-          DB_DATABASE: firsttouch_sla
+          DB_DATABASE: testing
           DB_USERNAME: sail
           DB_PASSWORD: password
           CACHE_STORE: redis
