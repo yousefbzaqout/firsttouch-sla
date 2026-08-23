@@ -17,4 +17,4 @@ JPEG (~80–110KB each) for reliable GitHub + IDE Markdown preview.
 | `feature-08-team-rbac.jpg` | Team RBAC |
 | `feature-09-developer-api.jpg` | Developer API |
 
-Live UI references: [`../screenshots/`](../screenshots/).
+Raw local captures (not published) may live under `docs/screenshots/` — gitignored.

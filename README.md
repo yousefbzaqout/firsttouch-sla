@@ -117,7 +117,7 @@ Sanctum tokens, inbound webhook contracts, and analytics endpoints for partners 
   <img src="docs/marketing/feature-09-developer-api.jpg" alt="Developer API tokens and webhook examples" width="900" />
 </p>
 
-More assets: [docs/marketing/](docs/marketing/) · live refs: [docs/screenshots/](docs/screenshots/)
+More assets: [docs/marketing/](docs/marketing/)
 
 ---
 

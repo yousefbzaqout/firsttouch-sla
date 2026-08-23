@@ -39,7 +39,6 @@ git push -u origin main
 ```text
 docs/marketing/firsttouch-sla-hero-legion.jpg
 docs/marketing/feature-01-sla-dashboard.jpg … feature-09-developer-api.jpg
-docs/screenshots/01-dashboard.png … 04-billing.png
 docs/ARCHITECTURE.md
 SECURITY.md
 LICENSE

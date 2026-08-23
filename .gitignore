@@ -38,3 +38,6 @@ composer.phar
 frankenphp
 frankenphp-worker.php
 .env.testing
+
+# Local raw UI captures (marketing JPGs in docs/marketing/ are the public assets)
+/docs/screenshots/
