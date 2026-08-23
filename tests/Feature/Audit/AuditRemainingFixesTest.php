@@ -66,7 +66,14 @@ it('does not breach in-progress leads that already have first_action_at', functi
     expect($inProgress->fresh()->sla_status)->toBe(SlaStatus::Active)
         ->and($awaiting->fresh()->sla_status)->toBe(SlaStatus::Breached);
 
-    Queue::assertPushed(EscalateLeadSlaJob::class, 1);
+    Queue::assertPushed(
+        EscalateLeadSlaJob::class,
+        fn (EscalateLeadSlaJob $job): bool => invade($job)->leadId === $awaiting->id,
+    );
+    Queue::assertNotPushed(
+        EscalateLeadSlaJob::class,
+        fn (EscalateLeadSlaJob $job): bool => invade($job)->leadId === $inProgress->id,
+    );
 });
 
 it('restarts the SLA clock when claiming a pending pool lead with no deadline', function (): void {

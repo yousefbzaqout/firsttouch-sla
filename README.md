@@ -1,300 +1,245 @@
 # FirstTouch SLA
 
-### Enterprise multi-tenant lead distribution & SLA enforcement engine
+**Multi-tenant lead distribution & business-hours SLA engine** — with AI RAG, Telegram alerts, and n8n automation.
 
-[![CI](https://github.com/yousefbzaqout/firsttouch-sla/actions/workflows/ci.yml/badge.svg)](https://github.com/yousefbzaqout/firsttouch-sla/actions/workflows/ci.yml)
-[![PHP](https://img.shields.io/badge/PHP-%3E%3D%208.5-777BB4?logo=php&logoColor=white)](#tech-stack)
-[![Laravel](https://img.shields.io/badge/Laravel-13.x-FF2D20?logo=laravel&logoColor=white)](#tech-stack)
-[![Filament](https://img.shields.io/badge/Filament-v5-FDAE4B)](#tech-stack)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Security Audit](https://img.shields.io/badge/Security%20Audit-Passed-1B7F4E)](SECURITY.md)
-[![PHPStan](https://img.shields.io/badge/PHPStan-Level%208-4F5D95)](#quality-assurance)
+[CI](https://github.com/yousefbzaqout/firsttouch-sla/actions/workflows/ci.yml)
+[PHP](#tech-stack)
+[Laravel](#tech-stack)
+[License: MIT](LICENSE)
+[Security](SECURITY.md)
 
-> **Portfolio centerpiece** — a production-shaped backend system for ultra-low-latency webhook ingestion, deterministic SLA clocks, intelligent escalation buffers, and tenant-safe operations UI.
+[Features](#feature-gallery) · [Architecture](#architecture) · [Quick start](#quick-start) · [API](#api--webhooks) · [Docs](docs/ARCHITECTURE.md)
 
-<p align="center">
-  <img src="docs/screenshots/01-dashboard.png" alt="FirstTouch SLA analytics dashboard" width="920" />
-</p>
+FirstTouch SLA on a Lenovo Legion display — Leads inbox with SLA badges
+
+*Hero · Lenovo Legion screen-only · light Filament UI · Nova Realty showcase data*
 
 ---
 
-## Executive summary
 
-**FirstTouch SLA** is a multi-tenant SLA tracking and lead distribution platform built for sales organizations that cannot afford slow first contact.
 
-It ingests leads from advertising and website channels, verifies signatures **fail-closed**, assigns agents with race-condition-safe claiming, starts a **business-hours-aware SLA clock**, escalates through buffer thresholds, optionally answers via a **confidence-gated RAG** path, and surfaces everything in a Filament operations console with role boundaries.
+## What it is
 
-This repository is designed to demonstrate senior backend engineering: SOLID/OCP integrations, DDD-flavored boundaries, strict multi-tenancy, queue-backed reliability, and security-first webhook handling.
+FirstTouch SLA helps sales teams **answer inbound leads in minutes, not hours**.
+
+Leads arrive from Meta, TikTok, Google, Snapchat, website forms, and Zapier/Make. The system verifies signatures **fail-closed**, assigns agents safely, starts a **timezone-aware SLA clock**, escalates through buffers, can answer with **confidence-gated RAG**, and notifies humans via **Telegram** / **n8n**.
+
+Built as an enterprise-shaped portfolio system: strict multi-tenancy, SOLID adapters, Horizon queues, Pest + PHPStan Level 8.
 
 ---
 
-## System architecture
+
+
+## Why teams buy this shape of product
+
+
+| Buyer pain                            | FirstTouch answer                                           |
+| ------------------------------------- | ----------------------------------------------------------- |
+| Ads spend wasted when leads go cold   | SLA clock + breach / warning / reassign buffers             |
+| Channel chaos (Meta, TikTok, Google…) | Signed webhooks + sandbox before go-live                    |
+| AI that hallucinates on prospects     | pgvector RAG with confidence gate → human fallback          |
+| Ops noise in email                    | Telegram alerts + claim / in-progress / contacted callbacks |
+| Custom CRM / Slack / WhatsApp glue    | n8n notification driver                                     |
+| Usage risk on AI                      | Credit ledger + plan gating                                 |
+
+
+---
+
+
+
+## Feature gallery
+
+Each shot is a full Legion **screen-only** mock of one marketable capability (16:9).
+
+### 1. SLA analytics dashboard
+
+Owner view: compliance rate, queue depth, breaches, and source mix — so managers see first-touch health at a glance.
+
+SLA analytics dashboard on Lenovo Legion display
+
+### 2. Leads inbox & claim workflow
+
+Multi-channel inbox with source pills, claim / in-progress / contacted actions, and SLA status (`pending` · `active` · `met` · `breached`).
+
+Leads inbox with SLA badges and claim actions
+
+### 3. AI Knowledge Base (RAG + pgvector)
+
+Tenant knowledge bases power confidence-gated answers. Below threshold → human-only path; credits gate inferences.
+
+AI Knowledge Base and RAG settings on Legion display
+
+### 4. Telegram ops alerts
+
+Instant lead + breach notifications with quick-reply callbacks so reps claim without opening the console first.
+
+Telegram alerts next to tenant notification settings
+
+### 5. n8n automation bridge
+
+Workflow-friendly notification driver for CRM, Slack, WhatsApp, or any custom ops chain.
+
+n8n workflow bridging FirstTouch SLA to Telegram and CRM
+
+### 6. Multi-channel webhook sandbox
+
+Simulate Meta / TikTok / Google / Snap / website payloads locally. Production adapters stay HMAC / API-key **fail-closed**.
+
+Webhook sandbox for multi-channel lead simulation
+
+### 7. Billing & AI credits
+
+Growth plan, credit balance, top-up packages, and AI routing that falls back to human-only at zero credits.
+
+Billing and AI credits console
+
+### 8. Team RBAC
+
+Owner vs sales roles: sales cannot touch billing or tenant settings. Skills + online status for fair routing.
+
+Team members RBAC and online status
+
+### 9. Developer API
+
+Sanctum tokens, inbound webhook contracts, and analytics endpoints for partners and internal tools.
+
+Developer API tokens and webhook examples
+
+More assets: `[docs/marketing/](docs/marketing/)` · live refs: `[docs/screenshots/](docs/screenshots/)`
+
+---
+
+
+
+## Architecture
 
 ```mermaid
 graph TD
-  subgraph Inbound["Inbound channels"]
-    META[Meta Lead Ads]
-    TT[TikTok Lead Ads]
-    WEB[Website / WordPress forms]
-    UNI[Zapier / Make / Universal]
+  subgraph Inbound
+    M[Meta / TikTok / Google / Snap]
+    W[Website API key]
+    Z[Zapier / Make]
   end
 
-  META --> RL[HTTP throttle + Webhook Controller]
-  TT --> RL
-  WEB --> RL
-  UNI --> RL
-
-  RL --> HMAC[HMAC / API-key verification<br/>fail-closed]
-  HMAC --> ADP[Webhook adapter strategy]
-  ADP --> QIN[[Horizon: ProcessLeadIngestionJob]]
-
-  QIN --> PIPE[Lead processing pipeline]
-  PIPE --> IDEM[Idempotency pipe]
-  PIPE --> ASN[Assignment / routing]
-  PIPE --> SLA[SLA Clock Engine]
-  SLA --> WH[Working Hours + Timezone service]
-  PIPE --> DB[(PostgreSQL 18 + pgvector)]
-
-  SLA --> BUF[[Escalation buffer jobs]]
-  BUF --> ALERT[Telegram / n8n / outbound webhook]
-  ASN --> WS[Filament Echo / Reverb events]
-  DB --> UI[Filament Dashboard]
-  DB --> SALES[Sales inbox + claim/actions]
-  DB --> RAG[RAG inference + credits gate]
-
-  UI --> WS
-  SALES --> WS
+  Inbound --> T[Throttle + Webhook Controller]
+  T --> H[HMAC / secret fail-closed]
+  H --> Q[[Horizon ingestion job]]
+  Q --> P[Lead pipeline]
+  P --> DB[(PostgreSQL + pgvector)]
+  P --> SLA[SLA + working hours]
+  SLA --> BUF[Escalation buffers]
+  BUF --> TG[Telegram]
+  BUF --> N8N[n8n workflows]
+  DB --> AI[RAG + credits gate]
+  DB --> UI[Filament Admin / Sales]
 ```
 
-Deep dive: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+
+
+More detail: `[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)`
 
 ---
 
-## Key technical highlights & engineering decisions
 
-### Multi-tenancy with hard boundaries
-- Single-database discriminator (`tenant_id`) with `BelongsToTenant` + Eloquent global scopes
-- Filament RBAC so sales reps cannot reach settings, billing, sandbox, or knowledge-base admin surfaces
-- Developer API tokens scoped through Sanctum abilities + tenant middleware
 
-### Deterministic SLA engine
-- Deadline calculation accounts for tenant timezone and working-hours windows
-- Off-hours can freeze the clock and resume at the next open shift
-- Invalid timezones are rejected in settings UI and safely resolved at runtime
+## Tech stack
 
-### Race-condition resilient claiming
-- Atomic lead claim paths with `lockForUpdate` / conditional updates
-- Prevents double-assignment under concurrent sales activity
 
-### Webhook security (fail-closed)
-- Per-source adapters (Meta, TikTok, Google, Snapchat, Universal, Website)
-- Dynamic HMAC / shared-secret verification
-- Missing secrets reject ingestion instead of silently accepting traffic
-- Encrypted secret storage for tenant webhook credentials
+| Layer          | Choice                                          |
+| -------------- | ----------------------------------------------- |
+| Backend        | PHP **8.5+**, Laravel **13**                    |
+| Admin UI       | Filament **v5**, Livewire                       |
+| Data           | PostgreSQL **18** + **pgvector**                |
+| Queues         | Redis + **Laravel Horizon**                     |
+| Realtime hooks | Reverb / Echo-ready                             |
+| Quality        | Pest, PHPStan **Level 8**, Pint, GitHub Actions |
 
-### Background reliability
-- Laravel Horizon supervising Redis queues (`default`, `high`, `notifications`)
-- Retries, backoffs, and scheduled SLA breach sweeps via Sail scheduler sidecar
-- Escalation buffers (warning + reassignment thresholds) without blocking request threads
-
-### Guarded AI path
-- Knowledge chunking + embeddings into pgvector
-- Confidence threshold + credit ledger before AI responses
-- Automatic fallback to human-only when credits are exhausted or context is weak
 
 ---
 
-## Tech stack matrix
 
-| Layer | Technology |
-|-------|------------|
-| **Runtime** | PHP **8.5+**, Laravel **13**, FrankenPHP-ready Docker images |
-| **Admin / UI** | Filament **v5**, Livewire, Tailwind-powered panel |
-| **Data** | PostgreSQL **18** + **pgvector** |
-| **Cache / queues** | Redis + **Laravel Horizon** |
-| **Realtime** | Laravel Reverb / Echo hooks (Pusher-compatible config) |
-| **Auth API** | Laravel Sanctum |
-| **Payments** | Driver abstraction (`mock` locally, Stripe-ready) |
-| **Notifications** | Telegram, n8n workflow bridge, outbound CRM webhooks |
-| **Quality** | Pest PHP, PHPStan **Level 8**, Laravel Pint, GitHub Actions CI |
 
-> Stack badges and docs reflect the **actual** versions in `composer.json` (not older marketing placeholders).
-
----
-
-## Product surfaces
-
-| Persona | Capabilities |
-|---------|--------------|
-| **Tenant owner / admin** | Analytics dashboard, team, tenant settings, billing/credits, KB, webhook sandbox, developer API |
-| **Sales rep** | Scoped lead inbox, claim, mark contacted, status updates, notes, online presence toggle |
-| **Integrations** | HMAC webhooks + website API key ingestion + Sanctum developer API |
-
-<p align="center">
-  <img src="docs/screenshots/02-leads.png" alt="Leads table with SLA badges" width="920" />
-</p>
-
-<table>
-  <tr>
-    <td width="50%">
-      <img src="docs/screenshots/03-webhook-sandbox.png" alt="Webhook sandbox" />
-      <p align="center"><sub>Webhook Sandbox — simulate ad-platform payloads safely</sub></p>
-    </td>
-    <td width="50%">
-      <img src="docs/screenshots/04-billing.png" alt="Billing and credits" />
-      <p align="center"><sub>Billing & Credits — packages + mock checkout path</sub></p>
-    </td>
-  </tr>
-</table>
-
----
-
-## Local setup (Laravel Sail)
-
-### Prerequisites
-- Docker Desktop / Docker Engine
-- Free local ports: `80`, `5432`, `6379`, `8025` (Mailpit), `5678` (n8n)
-
-### Steps
+## Quick start
 
 ```bash
 git clone https://github.com/yousefbzaqout/firsttouch-sla.git
 cd firsttouch-sla
 
-# Install PHP deps if vendor/ is missing
-docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" \
-  -w /var/www/html laravelsail/php84-composer:latest composer install
-
 cp .env.example .env
+composer install          # or Sail composer image if PHP is not local
 ./vendor/bin/sail up -d
 ./vendor/bin/sail artisan key:generate
 ./vendor/bin/sail artisan migrate --seed
-./vendor/bin/sail npm install && ./vendor/bin/sail npm run build
 ```
 
-### Open locally
-- Filament panel → http://localhost/admin  
-- Mailpit → http://localhost:8025  
-- n8n (optional) → http://localhost:5678  
-- Horizon → http://localhost/horizon (authenticated)
+Open **[http://localhost/admin](http://localhost/admin)** and register a tenant.
 
-Create your first tenant via Filament **Register**. Do not commit real API keys — leave AI/Stripe/webhook secrets empty for mock/local flows.
+Optional locals: Mailpit `http://localhost:8025` · n8n `http://localhost:5678` · Horizon `http://localhost/horizon`
 
----
+> Keep `PAYMENT_DRIVER=mock` and leave AI/Stripe/webhook secrets empty until you intentionally wire them.
 
-## API & webhook reference
+<details>
+<summary><strong>Showcase demo tenant</strong> (local seed used for marketing shots)</summary>
 
-Base prefix: `/api`
+| Field | Value |
+|-------|-------|
+| Company | Nova Realty Group |
+| Owner | `demo@novarealty.demo` |
+| Password | `DemoSecure123!` |
 
-### Auth
-| Method | Path | Notes |
-|--------|------|-------|
-| `POST` | `/api/v1/auth/register` | Throttled tenant registration |
-| `POST` | `/api/v1/auth/forgot-password` | Password reset request |
-| `POST` | `/api/v1/auth/reset-password` | Password reset confirm |
-
-### Inbound webhooks (HMAC / API key)
-| Method | Path | Source |
-|--------|------|--------|
-| `POST` | `/api/v1/webhooks/meta/{tenant_id}` | Meta |
-| `POST` | `/api/v1/webhooks/tiktok/{tenant_id}` | TikTok |
-| `POST` | `/api/v1/webhooks/google/{tenant_id}` | Google Ads |
-| `POST` | `/api/v1/webhooks/snapchat/{tenant_id}` | Snapchat |
-| `POST` | `/api/v1/webhooks/universal/{tenant_id}` | Zapier / Make |
-| `POST` | `/api/v1/webhooks/website/{tenant_id}` | Website form (`X-Website-Api-Key`) |
-| `POST` | `/api/v1/webhooks/telegram/{tenant_id}` | Telegram callbacks |
-
-### Payments
-| Method | Path | Notes |
-|--------|------|-------|
-| `POST` | `/api/v1/payments/webhook/{driver}` | Stripe / mock payment events |
-
-### Developer API (Sanctum)
-| Method | Path | Notes |
-|--------|------|-------|
-| `GET` | `/api/v1/developer/leads` | Tenant-scoped lead list |
-| `GET` | `/api/v1/developer/leads/{id}` | Lead detail |
-| `GET` | `/api/v1/developer/analytics/sla-summary` | SLA analytics summary |
-| `POST` | `/api/v1/developer/tokens` | Issue token |
-| `DELETE` | `/api/v1/developer/tokens/{tokenId}` | Revoke token |
+Local-only. Do not reuse on shared environments.
+</details>
 
 ---
 
-## Quality assurance
+## API & webhooks
+
+
+| Area              | Examples                                                                            |
+| ----------------- | ----------------------------------------------------------------------------------- |
+| **Auth**          | `POST /api/v1/auth/register`, forgot/reset password                                 |
+| **Inbound**       | `POST /api/v1/webhooks/{meta|tiktok|google|snapchat|universal|website}/{tenant_id}` |
+| **Telegram**      | `POST /api/v1/webhooks/telegram/{tenant_id}`                                        |
+| **Payments**      | `POST /api/v1/payments/webhook/{driver}`                                            |
+| **Developer API** | Sanctum: leads list/show, SLA analytics, token issue/revoke                         |
+
+
+---
+
+
+
+## Quality
 
 ```bash
-# Format (PSR-12 / Laravel style)
 ./vendor/bin/sail pint
-
-# Tests
-./vendor/bin/sail test
-
-# Static analysis (Level 8)
+./vendor/bin/sail test --parallel
 ./vendor/bin/sail exec laravel.test ./vendor/bin/phpstan analyse --memory-limit=1G
 ```
 
-CI (`.github/workflows/ci.yml`) on every `push` / `pull_request` to `main`:
-
-1. PHP 8.5 + Composer  
-2. PostgreSQL (`pgvector/pgvector:pg18`) + Redis services  
-3. Migrate  
-4. Pest (parallel)  
-5. PHPStan Level 8  
-
-Security policy: [`SECURITY.md`](SECURITY.md)
+CI runs the same gates on every push/PR to `main`.
 
 ---
 
-## Repository map
 
-```text
-app/
-  Adapters/       Webhook + notification strategies (OCP)
-  Casts/          Safe backed-enum hydration
-  DTOs/           Immutable transfer objects
-  Enums/          Domain state machines
-  Filament/       Ops console, widgets, RBAC pages
-  Pipelines/      Lead ingestion pipes
-  Services/       SLA, RAG, billing, assignment
-docs/
-  ARCHITECTURE.md
-  screenshots/
-routes/api.php    Webhooks + developer API
-tests/            Feature, unit, simulation suites
-```
+
+## GitHub launch checklist (for maintainers)
+
+1. Confirm `.env` / keys / `composer.phar` are **not** in git
+2. Push `main` with green CI
+3. Set GitHub **About**: short description + topics (`laravel`, `multi-tenant`, `sla`, `filament`, `pgvector`, `telegram`, `n8n`)
+4. Keep MIT `LICENSE` + `SECURITY.md` at repo root
+5. Prefer one semantic release tag when you cut a public version (`v1.0.0`)
 
 ---
 
-## Intentional scope notes
 
-Shipped and demonstrated end-to-end:
-
-- Multi-tenant console + sales RBAC  
-- Multi-source ingestion + sandbox  
-- SLA lifecycle + escalation buffers  
-- Knowledge base + RAG credit pipeline  
-- Mock billing top-up path  
-
-Intentionally lean (documented, not accidental gaps):
-
-- Working-hours UI editor (hours seeded at registration)  
-- Escalation threshold constants live in the buffer service (not a settings form)
-
----
 
 ## Author
 
-Built by **Yousef Bzaqout** as an enterprise-style portfolio system: architecture first, security by default, green CI required.
+**Yousef Bzaqout** — portfolio system focused on tenancy, SLA reliability, and integration security.
 
-If you are reviewing for hiring, start here:
-
-1. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)  
-2. `app/Pipelines` + `app/Adapters/Webhooks`  
-3. `app/Services/Sla`  
-4. `tests/Feature`
-
----
+Review path for hiring: `docs/ARCHITECTURE.md` → `app/Pipelines` → `app/Services/Sla` → `tests/Feature`.
 
 ## License
 
-Released under the [MIT License](LICENSE).
+[MIT](LICENSE)

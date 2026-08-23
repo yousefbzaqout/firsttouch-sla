@@ -32,7 +32,14 @@ it('dispatches escalation jobs for active leads past their sla deadline', functi
 
     $this->artisan('sla:check-breaches')->assertSuccessful();
 
-    Queue::assertPushed(EscalateLeadSlaJob::class, 1);
+    Queue::assertPushed(
+        EscalateLeadSlaJob::class,
+        fn (EscalateLeadSlaJob $job): bool => invade($job)->leadId === $breachedLead->id,
+    );
+    Queue::assertNotPushed(
+        EscalateLeadSlaJob::class,
+        fn (EscalateLeadSlaJob $job): bool => invade($job)->leadId === $activeLead->id,
+    );
 
     expect($breachedLead->fresh()->sla_status)->toBe(SlaStatus::Breached)
         ->and($activeLead->fresh()->sla_status)->toBe(SlaStatus::Active);
